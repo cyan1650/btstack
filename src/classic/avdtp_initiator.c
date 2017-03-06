@@ -97,9 +97,9 @@ void avdtp_initiator_stream_config_subsm(avdtp_connection_t * connection, uint8_
     if (connection->initiator_connection_state == AVDTP_SIGNALING_CONNECTION_INITIATOR_W4_ANSWER) {
         connection->initiator_connection_state = AVDTP_SIGNALING_CONNECTION_INITIATOR_IDLE;
     } else {
-        stream_endpoint = get_avdtp_stream_endpoint_associated_with_acp_seid(connection->acp_seid);
+        stream_endpoint = get_avdtp_stream_endpoint_associated_with_acp_seid(&stream_endpoints, connection->acp_seid);
         if (!stream_endpoint){
-            stream_endpoint = get_avdtp_stream_endpoint_with_seid(connection->int_seid);
+            stream_endpoint = get_avdtp_stream_endpoint_with_seid(&stream_endpoints, connection->int_seid);
         }
         if (!stream_endpoint) return;
         sep.seid = connection->acp_seid;
@@ -270,9 +270,9 @@ void avdtp_initiator_stream_config_subsm_run(avdtp_connection_t * connection){
     
     printf("   run int seid %d, acp seid %d\n", connection->int_seid, connection->acp_seid);
     
-    stream_endpoint = get_avdtp_stream_endpoint_associated_with_acp_seid(connection->acp_seid);
+    stream_endpoint = get_avdtp_stream_endpoint_associated_with_acp_seid(&stream_endpoints, connection->acp_seid);
     if (!stream_endpoint){
-        stream_endpoint = get_avdtp_stream_endpoint_with_seid(connection->int_seid);
+        stream_endpoint = get_avdtp_stream_endpoint_with_seid(&stream_endpoints, connection->int_seid);
     }
     if (!stream_endpoint) return;
     
@@ -343,6 +343,6 @@ void avdtp_initiator_stream_config_subsm_run(avdtp_connection_t * connection){
 
     // check fragmentation
     if (connection->signaling_packet.packet_type != AVDTP_SINGLE_PACKET && connection->signaling_packet.packet_type != AVDTP_END_PACKET){
-        avdtp_sink_request_can_send_now_initiator(connection, connection->l2cap_signaling_cid);
+        avdtp_request_can_send_now_initiator(connection, connection->l2cap_signaling_cid);
     }
 }

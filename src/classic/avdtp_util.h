@@ -52,8 +52,12 @@
 extern "C" {
 #endif
 
-avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_with_seid(uint8_t seid);
-avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_associated_with_acp_seid(uint16_t acp_seid);
+avdtp_connection_t * get_avdtp_connection_for_bd_addr(btstack_linked_list_t * connections, bd_addr_t addr);
+avdtp_connection_t * get_avdtp_connection_for_con_handle(btstack_linked_list_t * connections, hci_con_handle_t con_handle);
+avdtp_connection_t * get_avdtp_connection_for_l2cap_signaling_cid(btstack_linked_list_t * connections, uint16_t l2cap_cid);
+avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_for_l2cap_cid(btstack_linked_list_t * stream_endpoints, uint16_t l2cap_cid);
+avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_with_seid(btstack_linked_list_t * stream_endpoints, uint8_t seid);
+avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_associated_with_acp_seid(btstack_linked_list_t * stream_endpoints, uint16_t acp_seid);
 
 uint8_t avdtp_header(uint8_t tr_label, avdtp_packet_type_t packet_type, avdtp_message_type_t msg_type);
 int     avdtp_read_signaling_header(avdtp_signaling_packet_t * signaling_header, uint8_t * packet, uint16_t size);
@@ -81,13 +85,13 @@ void avdtp_signaling_emit_media_codec_other_configuration(btstack_packet_handler
 void avdtp_signaling_emit_media_codec_sbc_reconfiguration(btstack_packet_handler_t callback, uint16_t con_handle, adtvp_media_codec_capabilities_t media_codec);
 void avdtp_signaling_emit_media_codec_other_reconfiguration(btstack_packet_handler_t callback, uint16_t con_handle, adtvp_media_codec_capabilities_t media_codec);
 
-void avdtp_sink_request_can_send_now_acceptor(avdtp_connection_t * connection, uint16_t l2cap_cid);
-void avdtp_sink_request_can_send_now_initiator(avdtp_connection_t * connection, uint16_t l2cap_cid);
-void avdtp_sink_request_can_send_now_self(avdtp_connection_t * connection, uint16_t l2cap_cid);
+void avdtp_request_can_send_now_acceptor(avdtp_connection_t * connection, uint16_t l2cap_cid);
+void avdtp_request_can_send_now_initiator(avdtp_connection_t * connection, uint16_t l2cap_cid);
+void avdtp_request_can_send_now_self(avdtp_connection_t * connection, uint16_t l2cap_cid);
 
 uint8_t avdtp_get_index_of_remote_stream_endpoint_with_seid(avdtp_stream_endpoint_t * stream_endpoint, uint16_t acp_seid);
 
-avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_for_seid(uint16_t seid);
+avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_for_seid(btstack_linked_list_t * stream_endpoints, uint16_t seid);
 
 #if defined __cplusplus
 }

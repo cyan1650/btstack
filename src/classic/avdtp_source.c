@@ -44,11 +44,20 @@
 
 #include "btstack.h"
 #include "avdtp.h"
+#include "avdtp_util.h"
 #include "avdtp_source.h"
 
 
-static const char * default_avdtp_sink_service_name = "BTstack AVDTP Sink Service";
-static const char * default_avdtp_sink_service_provider_name = "BTstack AVDTP Sink Service Provider";
+static const char * default_avdtp_source_service_name = "BTstack AVDTP Source Service";
+static const char * default_avdtp_source_service_provider_name = "BTstack AVDTP Source Service Provider";
+
+static btstack_linked_list_t avdtp_connections;
+static uint16_t stream_endpoints_id_counter;
+
+btstack_linked_list_t stream_endpoints;
+btstack_packet_handler_t avdtp_source_callback;
+
+static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size);
 
 void a2dp_source_create_sdp_record(uint8_t * service,  uint32_t service_record_handle, uint16_t supported_features, const char * service_name, const char * service_provider_name){
     uint8_t* attribute;
@@ -113,7 +122,7 @@ void a2dp_source_create_sdp_record(uint8_t * service,  uint32_t service_record_h
     if (service_name){
         de_add_data(service,  DE_STRING, strlen(service_name), (uint8_t *) service_name);
     } else {
-        de_add_data(service,  DE_STRING, strlen(default_avdtp_sink_service_name), (uint8_t *) default_avdtp_sink_service_name);
+        de_add_data(service,  DE_STRING, strlen(default_avdtp_source_service_name), (uint8_t *) default_avdtp_source_service_name);
     }
 
     // 0x0100 "Provider Name"
@@ -121,7 +130,7 @@ void a2dp_source_create_sdp_record(uint8_t * service,  uint32_t service_record_h
     if (service_provider_name){
         de_add_data(service,  DE_STRING, strlen(service_provider_name), (uint8_t *) service_provider_name);
     } else {
-        de_add_data(service,  DE_STRING, strlen(default_avdtp_sink_service_provider_name), (uint8_t *) default_avdtp_sink_service_provider_name);
+        de_add_data(service,  DE_STRING, strlen(default_avdtp_source_service_provider_name), (uint8_t *) default_avdtp_source_service_provider_name);
     }
 
     // 0x0311 "Supported Features"
@@ -130,5 +139,99 @@ void a2dp_source_create_sdp_record(uint8_t * service,  uint32_t service_record_h
 }
 
 
+void avdtp_source_register_media_transport_category(uint8_t seid){
+    avdtp_register_media_transport_category(seid);
+}
+
+void avdtp_source_register_reporting_category(uint8_t seid){
+    avdtp_register_reporting_category(seid);
+}
+
+void avdtp_source_register_delay_reporting_category(uint8_t seid){
+    avdtp_register_delay_reporting_category(seid);
+}
+
+void avdtp_source_register_recovery_category(uint8_t seid, uint8_t maximum_recovery_window_size, uint8_t maximum_number_media_packets){
+    avdtp_register_recovery_category(seid, maximum_recovery_window_size, maximum_number_media_packets);
+}
+
+void avdtp_source_register_content_protection_category(uint8_t seid, uint16_t cp_type, const uint8_t * cp_type_value, uint8_t cp_type_value_len){
+    avdtp_register_content_protection_category(seid, cp_type, cp_type_value, cp_type_value_len);
+}
+
+void avdtp_source_register_header_compression_category(uint8_t seid, uint8_t back_ch, uint8_t media, uint8_t recovery){
+    avdtp_register_header_compression_category(seid, back_ch, media, recovery);
+}
+
+void avdtp_source_register_media_codec_category(uint8_t seid, avdtp_media_type_t media_type, avdtp_media_codec_type_t media_codec_type, const uint8_t * media_codec_info, uint16_t media_codec_info_len){
+    avdtp_register_media_codec_category(seid, media_type, media_codec_type, media_codec_info, media_codec_info_len);
+}
+
+void avdtp_source_register_multiplexing_category(uint8_t seid, uint8_t fragmentation){
+    avdtp_register_multiplexing_category(seid, fragmentation);
+}
+
+static avdtp_connection_t * avdtp_source_create_connection(bd_addr_t remote_addr){
+    avdtp_connection_t * connection = btstack_memory_avdtp_connection_get();
+    memset(connection, 0, sizeof(avdtp_connection_t));
+    connection->state = AVDTP_SIGNALING_CONNECTION_IDLE;
+    connection->initiator_transaction_label++;
+    memcpy(connection->remote_addr, remote_addr, 6);
+    btstack_linked_list_add(&avdtp_connections, (btstack_linked_item_t *) connection);
+    return connection;
+}
+
+avdtp_stream_endpoint_t * avdtp_source_create_stream_endpoint(avdtp_sep_type_t sep_type, avdtp_media_type_t media_type){
+    avdtp_stream_endpoint_t * stream_endpoint = btstack_memory_avdtp_stream_endpoint_get();
+    memset(stream_endpoint, 0, sizeof(avdtp_stream_endpoint_t));
+    stream_endpoints_id_counter++;
+    stream_endpoint->sep.seid = stream_endpoints_id_counter;
+    stream_endpoint->sep.media_type = media_type;
+    stream_endpoint->sep.type = sep_type;
+    btstack_linked_list_add(&stream_endpoints, (btstack_linked_item_t *) stream_endpoint);
+    return stream_endpoint;
+}
 
 
+static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
+    UNUSED(packet_type);
+    UNUSED(channel);
+    UNUSED(packet);
+    UNUSED(size);
+       
+}
+
+void avdtp_source_init(void){
+    stream_endpoints = NULL;
+    avdtp_connections = NULL;
+    stream_endpoints_id_counter = 0;
+    l2cap_register_service(&packet_handler, PSM_AVDTP, 0xffff, LEVEL_0);
+}
+
+void avdtp_source_register_packet_handler(btstack_packet_handler_t callback){
+    if (callback == NULL){
+        log_error("avdtp_source_register_packet_handler called with NULL callback");
+        return;
+    }
+    avdtp_source_callback = callback;
+}
+
+void avdtp_source_connect(bd_addr_t bd_addr){
+    avdtp_connection_t * connection = get_avdtp_connection_for_bd_addr((btstack_linked_list_t *) &avdtp_connections, bd_addr);
+    if (!connection){
+        connection = avdtp_source_create_connection(bd_addr);
+    }
+    if (connection->state != AVDTP_SIGNALING_CONNECTION_IDLE) return;
+    connection->state = AVDTP_SIGNALING_CONNECTION_W4_L2CAP_CONNECTED;
+    l2cap_create_channel(packet_handler, connection->remote_addr, PSM_AVDTP, 0xffff, NULL);
+}
+
+void avdtp_source_disconnect(uint16_t con_handle){
+    avdtp_connection_t * connection = get_avdtp_connection_for_con_handle((btstack_linked_list_t *) &avdtp_connections, con_handle);
+    if (!connection) return;
+    if (connection->state == AVDTP_SIGNALING_CONNECTION_IDLE) return;
+    if (connection->state == AVDTP_SIGNALING_CONNECTION_W4_L2CAP_DISCONNECTED) return;
+    
+    connection->disconnect = 1;
+    avdtp_request_can_send_now_self(connection, connection->l2cap_signaling_cid);
+}

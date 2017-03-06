@@ -1,4 +1,5 @@
-avdtp_test
+avdtp_source_test
+avdtp_sink_test
 portaudio_test
 *.sbc
 *.wav

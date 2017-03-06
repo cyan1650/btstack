@@ -50,9 +50,60 @@ inline uint8_t avdtp_header(uint8_t tr_label, avdtp_packet_type_t packet_type, a
     return (tr_label<<4) | ((uint8_t)packet_type<<2) | (uint8_t)msg_type;
 }
 
-avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_with_seid(uint8_t seid){
+avdtp_connection_t * get_avdtp_connection_for_bd_addr(btstack_linked_list_t * avdtp_connections, bd_addr_t addr){
     btstack_linked_list_iterator_t it;    
-    btstack_linked_list_iterator_init(&it, (btstack_linked_list_t *) &stream_endpoints);
+    btstack_linked_list_iterator_init(&it, avdtp_connections);
+    while (btstack_linked_list_iterator_has_next(&it)){
+        avdtp_connection_t * connection = (avdtp_connection_t *)btstack_linked_list_iterator_next(&it);
+        if (memcmp(addr, connection->remote_addr, 6) != 0) continue;
+        return connection;
+    }
+    return NULL;
+}
+
+avdtp_connection_t * get_avdtp_connection_for_con_handle(btstack_linked_list_t * avdtp_connections, hci_con_handle_t con_handle){
+    btstack_linked_list_iterator_t it;    
+    btstack_linked_list_iterator_init(&it, avdtp_connections);
+    while (btstack_linked_list_iterator_has_next(&it)){
+        avdtp_connection_t * connection = (avdtp_connection_t *)btstack_linked_list_iterator_next(&it);
+        if (connection->con_handle != con_handle) continue;
+        return connection;
+    }
+    return NULL;
+}
+
+avdtp_connection_t * get_avdtp_connection_for_l2cap_signaling_cid(btstack_linked_list_t * avdtp_connections, uint16_t l2cap_cid){
+    btstack_linked_list_iterator_t it;    
+    btstack_linked_list_iterator_init(&it, avdtp_connections);
+    while (btstack_linked_list_iterator_has_next(&it)){
+        avdtp_connection_t * connection = (avdtp_connection_t *)btstack_linked_list_iterator_next(&it);
+        if (connection->l2cap_signaling_cid != l2cap_cid) continue;
+        return connection;
+    }
+    return NULL;
+}
+
+avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_for_l2cap_cid(btstack_linked_list_t * list_stream_endpoints, uint16_t l2cap_cid){
+    btstack_linked_list_iterator_t it;    
+    btstack_linked_list_iterator_init(&it, list_stream_endpoints);
+    while (btstack_linked_list_iterator_has_next(&it)){
+        avdtp_stream_endpoint_t * stream_endpoint = (avdtp_stream_endpoint_t *)btstack_linked_list_iterator_next(&it);
+        if (stream_endpoint->l2cap_media_cid == l2cap_cid){
+            return stream_endpoint;
+        }
+        if (stream_endpoint->l2cap_reporting_cid == l2cap_cid){
+            return stream_endpoint;
+        }   
+        if (stream_endpoint->l2cap_recovery_cid == l2cap_cid){
+            return stream_endpoint;
+        }  
+    }
+    return NULL;
+}
+
+avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_with_seid(btstack_linked_list_t * list_stream_endpoints, uint8_t seid){
+    btstack_linked_list_iterator_t it;    
+    btstack_linked_list_iterator_init(&it, list_stream_endpoints);
     while (btstack_linked_list_iterator_has_next(&it)){
         avdtp_stream_endpoint_t * stream_endpoint = (avdtp_stream_endpoint_t *)btstack_linked_list_iterator_next(&it);
         if (stream_endpoint->sep.seid == seid){
@@ -62,9 +113,9 @@ avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_with_seid(uint8_t seid){
     return NULL;
 }
 
-avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_associated_with_acp_seid(uint16_t acp_seid){
+avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_associated_with_acp_seid(btstack_linked_list_t * list_stream_endpoints, uint16_t acp_seid){
     btstack_linked_list_iterator_t it;    
-    btstack_linked_list_iterator_init(&it, (btstack_linked_list_t *) &stream_endpoints);
+    btstack_linked_list_iterator_init(&it, list_stream_endpoints);
     while (btstack_linked_list_iterator_has_next(&it)){
         avdtp_stream_endpoint_t * stream_endpoint = (avdtp_stream_endpoint_t *)btstack_linked_list_iterator_next(&it);
         if (stream_endpoint->remote_sep_index >= 0 && stream_endpoint->remote_sep_index < MAX_NUM_SEPS){
@@ -655,22 +706,22 @@ void avdtp_signaling_emit_media_codec_other_reconfiguration(btstack_packet_handl
 }
                            
 
-void avdtp_sink_request_can_send_now_acceptor(avdtp_connection_t * connection, uint16_t l2cap_cid){
+void avdtp_request_can_send_now_acceptor(avdtp_connection_t * connection, uint16_t l2cap_cid){
     connection->wait_to_send_acceptor = 1;
     l2cap_request_can_send_now_event(l2cap_cid);
 }
-void avdtp_sink_request_can_send_now_initiator(avdtp_connection_t * connection, uint16_t l2cap_cid){
+void avdtp_request_can_send_now_initiator(avdtp_connection_t * connection, uint16_t l2cap_cid){
     connection->wait_to_send_initiator = 1;
     l2cap_request_can_send_now_event(l2cap_cid);
 }
-void avdtp_sink_request_can_send_now_self(avdtp_connection_t * connection, uint16_t l2cap_cid){
+void avdtp_request_can_send_now_self(avdtp_connection_t * connection, uint16_t l2cap_cid){
     connection->wait_to_send_self = 1;
     l2cap_request_can_send_now_event(l2cap_cid);
 }
 
-avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_for_seid(uint16_t seid){
+avdtp_stream_endpoint_t * get_avdtp_stream_endpoint_for_seid(btstack_linked_list_t * list_stream_endpoints, uint16_t seid){
     btstack_linked_list_iterator_t it;    
-    btstack_linked_list_iterator_init(&it, (btstack_linked_list_t *) &stream_endpoints);
+    btstack_linked_list_iterator_init(&it, list_stream_endpoints);
     while (btstack_linked_list_iterator_has_next(&it)){
         avdtp_stream_endpoint_t * stream_endpoint = (avdtp_stream_endpoint_t *)btstack_linked_list_iterator_next(&it);
         if (stream_endpoint->sep.seid == seid){

@@ -63,6 +63,23 @@ extern "C" {
  * @param service_provider_name
  */
 void a2dp_source_create_sdp_record(uint8_t * service,  uint32_t service_record_handle, uint16_t supported_features, const char * service_name, const char * service_provider_name);
+
+void avdtp_source_register_media_transport_category(uint8_t seid);
+void avdtp_source_register_reporting_category(uint8_t seid);
+void avdtp_source_register_delay_reporting_category(uint8_t seid);
+void avdtp_source_register_recovery_category(uint8_t seid, uint8_t maximum_recovery_window_size, uint8_t maximum_number_media_packets);
+void avdtp_source_register_content_protection_category(uint8_t seid, uint16_t cp_type, const uint8_t * cp_type_value, uint8_t cp_type_value_len);
+void avdtp_source_register_header_compression_category(uint8_t seid, uint8_t back_ch, uint8_t media, uint8_t recovery);
+void avdtp_source_register_media_codec_category(uint8_t seid, avdtp_media_type_t media_type, avdtp_media_codec_type_t media_codec_type, const uint8_t * media_codec_info, uint16_t media_codec_info_len);
+void avdtp_source_register_multiplexing_category(uint8_t seid, uint8_t fragmentation);
+
+
+void avdtp_source_init(void);
+void avdtp_source_register_packet_handler(btstack_packet_handler_t callback);
+void avdtp_source_connect(bd_addr_t bd_addr);
+void avdtp_source_disconnect(uint16_t con_handle);
+
+avdtp_stream_endpoint_t * avdtp_source_create_stream_endpoint(avdtp_sep_type_t sep_type, avdtp_media_type_t media_type);
 /* API_END */
 
 #if defined __cplusplus
