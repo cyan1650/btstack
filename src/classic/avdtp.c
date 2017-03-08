@@ -280,10 +280,9 @@ void avdtp_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet
     btstack_linked_list_t * avdtp_connections = &context->connections;
     btstack_linked_list_t * stream_endpoints =  &context->stream_endpoints;
     handle_media_data = context->handle_media_data;
-
+    printf("avdtp_packet_handler packet type %02x, event %02x \n", packet_type, hci_event_packet_get_type(packet));
     switch (packet_type) {
         case L2CAP_DATA_PACKET:
-            printf("L2CAP_DATA_PACKET 2\n");
             connection = avdtp_connection_for_l2cap_signaling_cid(channel, context);
             if (connection){
                 handle_l2cap_data_packet_for_signaling_connection(connection, packet, size, context);
@@ -296,14 +295,12 @@ void avdtp_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet
                 handle_l2cap_data_packet_for_signaling_connection(connection, packet, size, context);
                 break;
             }
-            printf("L2CAP_DATA_PACKET 2\n");
             
             if (channel == stream_endpoint->connection->l2cap_signaling_cid){
                 stream_endpoint_state_machine(stream_endpoint->connection, stream_endpoint, L2CAP_DATA_PACKET, 0, packet, size, context);
                 break;
             }
 
-            printf("handle_media_data\n");
             if (channel == stream_endpoint->l2cap_media_cid){
                 (*handle_media_data)(stream_endpoint, packet, size);
                 break;
@@ -350,7 +347,7 @@ void avdtp_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet
                 case L2CAP_EVENT_CHANNEL_OPENED:
                     // inform about new l2cap connection
                     l2cap_event_channel_opened_get_address(packet, event_addr);
-                    
+                    printf("L2CAP_EVENT_CHANNEL_OPENED \n");
                     if (l2cap_event_channel_opened_get_status(packet)){
                         log_error("L2CAP connection to connection %s failed. status code 0x%02x", 
                             bd_addr_to_str(event_addr), l2cap_event_channel_opened_get_status(packet));

@@ -55,7 +55,7 @@ static avdtp_context_t avdtp_source_context;
 
 static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size);
 
-void a2dp_source_create_sdp_record(uint8_t * service,  uint32_t service_record_handle, uint16_t supported_features, const char * service_name, const char * service_provider_name){
+void a2dp_source_create_sdp_record(uint8_t * service, uint32_t service_record_handle, uint16_t supported_features, const char * service_name, const char * service_provider_name){
     uint8_t* attribute;
     de_create_sequence(service);
 
@@ -181,11 +181,7 @@ avdtp_stream_endpoint_t * avdtp_source_create_stream_endpoint(avdtp_sep_type_t s
 
 
 static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
-    UNUSED(packet_type);
-    UNUSED(channel);
-    UNUSED(packet);
-    UNUSED(size);
-       
+    avdtp_packet_handler(packet_type, channel, packet, size, &avdtp_source_context);      
 }
 
 void avdtp_source_init(void){
