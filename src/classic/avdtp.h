@@ -443,14 +443,27 @@ typedef struct avdtp_stream_endpoint {
     uint8_t media_connect;
 } avdtp_stream_endpoint_t;
 
-void avdtp_register_media_transport_category(uint8_t seid);
-void avdtp_register_reporting_category(uint8_t seid);
-void avdtp_register_delay_reporting_category(uint8_t seid);
-void avdtp_register_recovery_category(uint8_t seid, uint8_t maximum_recovery_window_size, uint8_t maximum_number_media_packets);
-void avdtp_register_content_protection_category(uint8_t seid, uint16_t cp_type, const uint8_t * cp_type_value, uint8_t cp_type_value_len);
-void avdtp_register_header_compression_category(uint8_t seid, uint8_t back_ch, uint8_t media, uint8_t recovery);
-void avdtp_register_media_codec_category(uint8_t seid, avdtp_media_type_t media_type, avdtp_media_codec_type_t media_codec_type, const uint8_t * media_codec_info, uint16_t media_codec_info_len);
-void avdtp_register_multiplexing_category(uint8_t seid, uint8_t fragmentation);
+typedef struct {
+    btstack_linked_list_t connections;
+    btstack_linked_list_t stream_endpoints;
+    uint16_t stream_endpoints_id_counter;
+    btstack_packet_handler_t avdtp_callback;
+    void (*handle_media_data)(avdtp_stream_endpoint_t * stream_endpoint, uint8_t *packet, uint16_t size);
+} avdtp_context_t; 
+
+void avdtp_register_media_transport_category(avdtp_stream_endpoint_t * stream_endpoint);
+void avdtp_register_reporting_category(avdtp_stream_endpoint_t * stream_endpoint);
+void avdtp_register_delay_reporting_category(avdtp_stream_endpoint_t * stream_endpoint);
+void avdtp_register_recovery_category(avdtp_stream_endpoint_t * stream_endpoint, uint8_t maximum_recovery_window_size, uint8_t maximum_number_media_packets);
+void avdtp_register_content_protection_category(avdtp_stream_endpoint_t * stream_endpoint, uint16_t cp_type, const uint8_t * cp_type_value, uint8_t cp_type_value_len);
+void avdtp_register_header_compression_category(avdtp_stream_endpoint_t * stream_endpoint, uint8_t back_ch, uint8_t media, uint8_t recovery);
+void avdtp_register_media_codec_category(avdtp_stream_endpoint_t * stream_endpoint, avdtp_media_type_t media_type, avdtp_media_codec_type_t media_codec_type, const uint8_t * media_codec_info, uint16_t media_codec_info_len);
+void avdtp_register_multiplexing_category(avdtp_stream_endpoint_t * stream_endpoint, uint8_t fragmentation);
+void avdtp_handle_can_send_now(avdtp_connection_t * connection, uint16_t l2cap_cid, avdtp_context_t * context);
+
+void avdtp_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size, avdtp_context_t * context);
+avdtp_connection_t * avdtp_create_connection(bd_addr_t remote_addr, avdtp_context_t * context);
+avdtp_stream_endpoint_t * avdtp_create_stream_endpoint(avdtp_sep_type_t sep_type, avdtp_media_type_t media_type, avdtp_context_t * context);
 
 #if defined __cplusplus
 }

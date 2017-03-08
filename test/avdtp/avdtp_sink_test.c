@@ -650,7 +650,7 @@ int btstack_main(int argc, const char * argv[]){
     // avdtp_sink_register_content_protection_category(seid, 2, 2, NULL, 0);
 
     avdtp_sink_register_media_handler(&handle_l2cap_media_data_packet);
-
+    printf("reistered media handler\n");
     // Initialize SDP 
     sdp_init();
     memset(sdp_avdtp_sink_service_buffer, 0, sizeof(sdp_avdtp_sink_service_buffer));
@@ -660,7 +660,8 @@ int btstack_main(int argc, const char * argv[]){
     gap_set_local_name("BTstack A2DP Sink Test");
     gap_discoverable_control(1);
     gap_set_class_of_device(0x200408);
-    
+    printf("sdp, gap done\n");
+
     // turn on!
     hci_power_control(HCI_POWER_ON);
 

@@ -89,17 +89,18 @@ static void avdtp_signaling_emit_media_codec_configuration(btstack_packet_handle
     }
 }
 
-void avdtp_initiator_stream_config_subsm(avdtp_connection_t * connection, uint8_t *packet, uint16_t size, int offset){
+void avdtp_initiator_stream_config_subsm(avdtp_connection_t * connection, uint8_t *packet, uint16_t size, int offset, avdtp_context_t * context){
     int status = 0;
     avdtp_stream_endpoint_t * stream_endpoint = NULL;
+    
     uint8_t remote_sep_index;
     avdtp_sep_t sep;
     if (connection->initiator_connection_state == AVDTP_SIGNALING_CONNECTION_INITIATOR_W4_ANSWER) {
         connection->initiator_connection_state = AVDTP_SIGNALING_CONNECTION_INITIATOR_IDLE;
     } else {
-        stream_endpoint = get_avdtp_stream_endpoint_associated_with_acp_seid(&stream_endpoints, connection->acp_seid);
+        stream_endpoint = avdtp_stream_endpoint_associated_with_acp_seid(connection->acp_seid, context);
         if (!stream_endpoint){
-            stream_endpoint = get_avdtp_stream_endpoint_with_seid(&stream_endpoints, connection->int_seid);
+            stream_endpoint = avdtp_stream_endpoint_with_seid(connection->int_seid, context);
         }
         if (!stream_endpoint) return;
         sep.seid = connection->acp_seid;
@@ -139,7 +140,7 @@ void avdtp_initiator_stream_config_subsm(avdtp_connection_t * connection, uint8_
                         sep.in_use = (packet[i] >> 1) & 0x01;
                         sep.media_type = (avdtp_media_type_t)(packet[i+1] >> 4);
                         sep.type = (avdtp_sep_type_t)((packet[i+1] >> 3) & 0x01);
-                        avdtp_signaling_emit_sep(avdtp_sink_callback, connection->con_handle, sep);
+                        avdtp_signaling_emit_sep(context->avdtp_callback, connection->con_handle, sep);
                     }
                     break;
                 }
@@ -148,14 +149,14 @@ void avdtp_initiator_stream_config_subsm(avdtp_connection_t * connection, uint8_
                 case AVDTP_SI_GET_ALL_CAPABILITIES:
                     printf("AVDTP_SI_GET(_ALL)_CAPABILITIES\n");
                     sep.registered_service_categories = avdtp_unpack_service_capabilities(connection, &sep.capabilities, packet+offset, size-offset);
-                    avdtp_signaling_emit_media_codec_capability(avdtp_sink_callback, connection->con_handle, sep);
+                    avdtp_signaling_emit_media_codec_capability(context->avdtp_callback, connection->con_handle, sep);
                     break;
                 
                 case AVDTP_SI_GET_CONFIGURATION:
                     printf("AVDTP_SI_GET_CONFIGURATION\n");
                     sep.configured_service_categories = avdtp_unpack_service_capabilities(connection, &sep.configuration, packet+offset, size-offset);
                 
-                    avdtp_signaling_emit_media_codec_configuration(avdtp_sink_callback, connection->con_handle, sep);
+                    avdtp_signaling_emit_media_codec_configuration(context->avdtp_callback, connection->con_handle, sep);
                     break;
                 
                 case AVDTP_SI_RECONFIGURE:
@@ -221,11 +222,11 @@ void avdtp_initiator_stream_config_subsm(avdtp_connection_t * connection, uint8_
             break;
         case AVDTP_RESPONSE_REJECT_MSG:
             printf("    AVDTP_RESPONSE_REJECT_MSG signal %d\n", connection->signaling_packet.signal_identifier);
-            avdtp_signaling_emit_reject(avdtp_sink_callback, connection->con_handle, connection->signaling_packet.signal_identifier);
+            avdtp_signaling_emit_reject(context->avdtp_callback, connection->con_handle, connection->signaling_packet.signal_identifier);
             return;
         case AVDTP_GENERAL_REJECT_MSG:
             printf("    AVDTP_GENERAL_REJECT_MSG signal %d\n", connection->signaling_packet.signal_identifier);
-            avdtp_signaling_emit_general_reject(avdtp_sink_callback, connection->con_handle, connection->signaling_packet.signal_identifier);
+            avdtp_signaling_emit_general_reject(context->avdtp_callback, connection->con_handle, connection->signaling_packet.signal_identifier);
             return;
         default:
             break;
@@ -233,11 +234,12 @@ void avdtp_initiator_stream_config_subsm(avdtp_connection_t * connection, uint8_
     connection->initiator_transaction_label++;
     connection->int_seid = 0;
     connection->acp_seid = 0;
-    avdtp_signaling_emit_accept(avdtp_sink_callback, connection->con_handle, connection->signaling_packet.signal_identifier, status);
+    avdtp_signaling_emit_accept(context->avdtp_callback, connection->con_handle, connection->signaling_packet.signal_identifier, status);
 }
 
-void avdtp_initiator_stream_config_subsm_run(avdtp_connection_t * connection){
+void avdtp_initiator_stream_config_subsm_run(avdtp_connection_t * connection, avdtp_context_t * context){
     int sent = 1;
+
     switch (connection->initiator_connection_state){
         case AVDTP_SIGNALING_CONNECTION_INITIATOR_W2_DISCOVER_SEPS:
             printf("    INT: AVDTP_SIGNALING_CONNECTION_INITIATOR_W2_DISCOVER_SEPS\n");
@@ -270,9 +272,9 @@ void avdtp_initiator_stream_config_subsm_run(avdtp_connection_t * connection){
     
     printf("   run int seid %d, acp seid %d\n", connection->int_seid, connection->acp_seid);
     
-    stream_endpoint = get_avdtp_stream_endpoint_associated_with_acp_seid(&stream_endpoints, connection->acp_seid);
+    stream_endpoint = avdtp_stream_endpoint_associated_with_acp_seid(connection->acp_seid, context);
     if (!stream_endpoint){
-        stream_endpoint = get_avdtp_stream_endpoint_with_seid(&stream_endpoints, connection->int_seid);
+        stream_endpoint = avdtp_stream_endpoint_with_seid(connection->int_seid, context);
     }
     if (!stream_endpoint) return;
     
