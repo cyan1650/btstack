@@ -214,11 +214,49 @@ void avdtp_source_connect(bd_addr_t bd_addr){
 }
 
 void avdtp_source_disconnect(uint16_t con_handle){
-    avdtp_connection_t * connection = avdtp_connection_for_con_handle(con_handle, &avdtp_source_context);
-    if (!connection) return;
-    if (connection->state == AVDTP_SIGNALING_CONNECTION_IDLE) return;
-    if (connection->state == AVDTP_SIGNALING_CONNECTION_W4_L2CAP_DISCONNECTED) return;
-    
-    connection->disconnect = 1;
-    avdtp_request_can_send_now_self(connection, connection->l2cap_signaling_cid);
+    avdtp_disconnect(con_handle, &avdtp_source_context);
+}
+
+void avdtp_source_open_stream(uint16_t con_handle, uint8_t acp_seid){
+    avdtp_open_stream(con_handle, acp_seid, &avdtp_source_context);
+}
+
+void avdtp_source_start_stream(uint16_t con_handle, uint8_t acp_seid){
+    avdtp_start_stream(con_handle, acp_seid, &avdtp_source_context);
+}
+
+void avdtp_source_stop_stream(uint16_t con_handle, uint8_t acp_seid){
+    avdtp_stop_stream(con_handle, acp_seid, &avdtp_source_context);
+}
+
+void avdtp_source_abort_stream(uint16_t con_handle, uint8_t acp_seid){
+    avdtp_abort_stream(con_handle, acp_seid, &avdtp_source_context);
+}
+
+void avdtp_source_discover_stream_endpoints(uint16_t con_handle){
+    avdtp_discover_stream_endpoints(con_handle, &avdtp_source_context);
+}
+
+void avdtp_source_get_capabilities(uint16_t con_handle, uint8_t acp_seid){
+    avdtp_get_capabilities(con_handle, acp_seid, &avdtp_source_context);
+}
+
+void avdtp_source_get_all_capabilities(uint16_t con_handle, uint8_t acp_seid){
+    avdtp_get_all_capabilities(con_handle, acp_seid, &avdtp_source_context);
+}
+
+void avdtp_source_get_configuration(uint16_t con_handle, uint8_t acp_seid){
+    avdtp_get_configuration(con_handle, acp_seid, &avdtp_source_context);
+}
+
+void avdtp_source_set_configuration(uint16_t con_handle, uint8_t int_seid, uint8_t acp_seid, uint16_t configured_services_bitmap, avdtp_capabilities_t configuration){
+    avdtp_set_configuration(con_handle, int_seid, acp_seid, configured_services_bitmap, configuration, &avdtp_source_context);
+}
+
+void avdtp_source_reconfigure(uint16_t con_handle, uint8_t acp_seid, uint16_t configured_services_bitmap, avdtp_capabilities_t configuration){
+    avdtp_reconfigure(con_handle, acp_seid, configured_services_bitmap, configuration, &avdtp_source_context);
+}
+
+void avdtp_source_suspend(uint16_t con_handle, uint8_t acp_seid){
+    avdtp_suspend(con_handle, acp_seid, &avdtp_source_context);
 }

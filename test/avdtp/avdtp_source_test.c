@@ -95,8 +95,8 @@ static adtvp_media_codec_information_sbc_t sbc_capability;
 static avdtp_media_codec_configuration_sbc_t sbc_configuration;
 static avdtp_stream_endpoint_t * local_stream_endpoint;
 
-// static uint16_t remote_configuration_bitmap;
-// static avdtp_capabilities_t remote_configuration;
+static uint16_t remote_configuration_bitmap;
+static avdtp_capabilities_t remote_configuration;
 
 typedef enum {
     AVDTP_APPLICATION_IDLE,
@@ -227,17 +227,17 @@ static void show_usage(void){
     printf("\n--- Bluetooth AVDTP SOURCE Test Console %s ---\n", bd_addr_to_str(iut_address));
     printf("c      - create connection to addr %s\n", bd_addr_to_str(remote));
     printf("C      - disconnect\n");
-    // printf("d      - discover stream endpoints\n");
-    // printf("g      - get capabilities\n");
-    // printf("a      - get all capabilities\n");
-    // printf("s      - set configuration\n");
-    // printf("f      - get configuration\n");
-    // printf("R      - reconfigure stream with %d\n", sep.seid);
-    // printf("o      - open stream with seid %d\n", sep.seid);
-    // printf("m      - start stream with %d\n", sep.seid);
-    // printf("A      - abort stream with %d\n", sep.seid);
-    // printf("S      - stop stream with %d\n", sep.seid);
-    // printf("P      - suspend stream with %d\n", sep.seid);
+    printf("d      - discover stream endpoints\n");
+    printf("g      - get capabilities\n");
+    printf("a      - get all capabilities\n");
+    printf("s      - set configuration\n");
+    printf("f      - get configuration\n");
+    printf("R      - reconfigure stream with %d\n", sep.seid);
+    printf("o      - open stream with seid %d\n", sep.seid);
+    printf("m      - start stream with %d\n", sep.seid);
+    printf("A      - abort stream with %d\n", sep.seid);
+    printf("S      - stop stream with %d\n", sep.seid);
+    printf("P      - suspend stream with %d\n", sep.seid);
     printf("Ctrl-c - exit\n");
     printf("---\n");
 }
@@ -248,17 +248,17 @@ static const uint8_t media_sbc_codec_capabilities[] = {
     2, 53
 }; 
 
-// static const uint8_t media_sbc_codec_configuration[] = {
-//     (AVDTP_SBC_44100 << 4) | AVDTP_SBC_STEREO,
-//     (AVDTP_SBC_BLOCK_LENGTH_16 << 4) | (AVDTP_SBC_SUBBANDS_8 << 2) | AVDTP_SBC_ALLOCATION_METHOD_LOUDNESS,
-//     2, 53
-// }; 
+static const uint8_t media_sbc_codec_configuration[] = {
+    (AVDTP_SBC_44100 << 4) | AVDTP_SBC_STEREO,
+    (AVDTP_SBC_BLOCK_LENGTH_16 << 4) | (AVDTP_SBC_SUBBANDS_8 << 2) | AVDTP_SBC_ALLOCATION_METHOD_LOUDNESS,
+    2, 53
+}; 
 
-// static const uint8_t media_sbc_codec_reconfiguration[] = {
-//     (AVDTP_SBC_44100 << 4) | AVDTP_SBC_STEREO,
-//     (AVDTP_SBC_BLOCK_LENGTH_16 << 4) | (AVDTP_SBC_SUBBANDS_8 << 2) | AVDTP_SBC_ALLOCATION_METHOD_SNR,
-//     2, 53
-// }; 
+static const uint8_t media_sbc_codec_reconfiguration[] = {
+    (AVDTP_SBC_44100 << 4) | AVDTP_SBC_STEREO,
+    (AVDTP_SBC_BLOCK_LENGTH_16 << 4) | (AVDTP_SBC_SUBBANDS_8 << 2) | AVDTP_SBC_ALLOCATION_METHOD_SNR,
+    2, 53
+}; 
 
 static void stdin_process(btstack_data_source_t *ds, btstack_data_source_callback_type_t callback_type){
     UNUSED(ds);
@@ -276,60 +276,60 @@ static void stdin_process(btstack_data_source_t *ds, btstack_data_source_callbac
             printf("Disconnect not implemented\n");
             // avdtp_source_disconnect(con_handle);
             break;
-        // case 'd':
-        //     app_state = AVDTP_APPLICATION_W2_DISCOVER_SEPS;
-        //     avdtp_source_discover_stream_endpoints(con_handle);
-        //     break;
-        // case 'g':
-        //     app_state = AVDTP_APPLICATION_W2_GET_CAPABILITIES;
-        //     avdtp_source_get_capabilities(con_handle, sep.seid);
-        //     break;
-        // case 'a':
-        //     app_state = AVDTP_APPLICATION_W2_GET_ALL_CAPABILITIES;
-        //     avdtp_source_get_all_capabilities(con_handle, sep.seid);
-        //     break;
-        // case 'f':
-        //     app_state = AVDTP_APPLICATION_W2_GET_CONFIGURATION;
-        //     avdtp_source_get_configuration(con_handle, sep.seid);
-        //     break;
-        // case 's':
-        //     app_state = AVDTP_APPLICATION_W2_SET_CONFIGURATION;
-        //     remote_configuration_bitmap = store_bit16(remote_configuration_bitmap, AVDTP_MEDIA_CODEC, 1);
-        //     remote_configuration.media_codec.media_type = AVDTP_AUDIO;
-        //     remote_configuration.media_codec.media_codec_type = AVDTP_CODEC_SBC;
-        //     remote_configuration.media_codec.media_codec_information_len = sizeof(media_sbc_codec_configuration);
-        //     remote_configuration.media_codec.media_codec_information = media_sbc_codec_configuration;
-        //     avdtp_source_set_configuration(con_handle, local_stream_endpoint->sep.seid, sep.seid, remote_configuration_bitmap, remote_configuration);
-        //     break;
-        // case 'R':
-        //     app_state = AVDTP_APPLICATION_W2_RECONFIGURE_WITH_SEID;
-        //     remote_configuration_bitmap = store_bit16(remote_configuration_bitmap, AVDTP_MEDIA_CODEC, 1);
-        //     remote_configuration.media_codec.media_type = AVDTP_AUDIO;
-        //     remote_configuration.media_codec.media_codec_type = AVDTP_CODEC_SBC;
-        //     remote_configuration.media_codec.media_codec_information_len = sizeof(media_sbc_codec_reconfiguration);
-        //     remote_configuration.media_codec.media_codec_information = media_sbc_codec_reconfiguration;
-        //     avdtp_source_reconfigure(con_handle, sep.seid, remote_configuration_bitmap, remote_configuration);
-        //     break;
-        // case 'o':
-        //     app_state = AVDTP_APPLICATION_W2_OPEN_STREAM_WITH_SEID;
-        //     avdtp_source_open_stream(con_handle, sep.seid);
-        //     break;
-        // case 'm': 
-        //     app_state = AVDTP_APPLICATION_W2_START_STREAM_WITH_SEID;
-        //     avdtp_source_start_stream(con_handle, sep.seid);
-        //     break;
-        // case 'A':
-        //     app_state = AVDTP_APPLICATION_W2_ABORT_STREAM_WITH_SEID;
-        //     avdtp_source_abort_stream(con_handle, sep.seid);
-        //     break;
-        // case 'S':
-        //     app_state = AVDTP_APPLICATION_W2_STOP_STREAM_WITH_SEID;
-        //     avdtp_source_stop_stream(con_handle, sep.seid);
-        //     break;
-        // case 'P':
-        //     app_state = AVDTP_APPLICATION_W2_SUSPEND_STREAM_WITH_SEID;
-        //     avdtp_source_suspend(con_handle, sep.seid);
-        //     break;
+        case 'd':
+            app_state = AVDTP_APPLICATION_W2_DISCOVER_SEPS;
+            avdtp_source_discover_stream_endpoints(con_handle);
+            break;
+        case 'g':
+            app_state = AVDTP_APPLICATION_W2_GET_CAPABILITIES;
+            avdtp_source_get_capabilities(con_handle, sep.seid);
+            break;
+        case 'a':
+            app_state = AVDTP_APPLICATION_W2_GET_ALL_CAPABILITIES;
+            avdtp_source_get_all_capabilities(con_handle, sep.seid);
+            break;
+        case 'f':
+            app_state = AVDTP_APPLICATION_W2_GET_CONFIGURATION;
+            avdtp_source_get_configuration(con_handle, sep.seid);
+            break;
+        case 's':
+            app_state = AVDTP_APPLICATION_W2_SET_CONFIGURATION;
+            remote_configuration_bitmap = store_bit16(remote_configuration_bitmap, AVDTP_MEDIA_CODEC, 1);
+            remote_configuration.media_codec.media_type = AVDTP_AUDIO;
+            remote_configuration.media_codec.media_codec_type = AVDTP_CODEC_SBC;
+            remote_configuration.media_codec.media_codec_information_len = sizeof(media_sbc_codec_configuration);
+            remote_configuration.media_codec.media_codec_information = media_sbc_codec_configuration;
+            avdtp_source_set_configuration(con_handle, local_stream_endpoint->sep.seid, sep.seid, remote_configuration_bitmap, remote_configuration);
+            break;
+        case 'R':
+            app_state = AVDTP_APPLICATION_W2_RECONFIGURE_WITH_SEID;
+            remote_configuration_bitmap = store_bit16(remote_configuration_bitmap, AVDTP_MEDIA_CODEC, 1);
+            remote_configuration.media_codec.media_type = AVDTP_AUDIO;
+            remote_configuration.media_codec.media_codec_type = AVDTP_CODEC_SBC;
+            remote_configuration.media_codec.media_codec_information_len = sizeof(media_sbc_codec_reconfiguration);
+            remote_configuration.media_codec.media_codec_information = media_sbc_codec_reconfiguration;
+            avdtp_source_reconfigure(con_handle, sep.seid, remote_configuration_bitmap, remote_configuration);
+            break;
+        case 'o':
+            app_state = AVDTP_APPLICATION_W2_OPEN_STREAM_WITH_SEID;
+            avdtp_source_open_stream(con_handle, sep.seid);
+            break;
+        case 'm': 
+            app_state = AVDTP_APPLICATION_W2_START_STREAM_WITH_SEID;
+            avdtp_source_start_stream(con_handle, sep.seid);
+            break;
+        case 'A':
+            app_state = AVDTP_APPLICATION_W2_ABORT_STREAM_WITH_SEID;
+            avdtp_source_abort_stream(con_handle, sep.seid);
+            break;
+        case 'S':
+            app_state = AVDTP_APPLICATION_W2_STOP_STREAM_WITH_SEID;
+            avdtp_source_stop_stream(con_handle, sep.seid);
+            break;
+        case 'P':
+            app_state = AVDTP_APPLICATION_W2_SUSPEND_STREAM_WITH_SEID;
+            avdtp_source_suspend(con_handle, sep.seid);
+            break;
 
         case '\n':
         case '\r':
