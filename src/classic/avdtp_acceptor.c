@@ -326,10 +326,11 @@ void avdtp_acceptor_stream_config_subsm(avdtp_connection_t * connection, uint8_t
                     printf("    ACP: AVDTP_STREAM_ENDPOINT_W2_ANSWER_OPEN_STREAM\n");
                     stream_endpoint->acceptor_config_state = AVDTP_ACCEPTOR_W2_ANSWER_OPEN_STREAM;
                     stream_endpoint->state = AVDTP_STREAM_ENDPOINT_W4_L2CAP_FOR_MEDIA_CONNECTED;
+                    connection->query_seid = stream_endpoint->sep.seid;
                     break;
                 case AVDTP_SI_START:
                     if (stream_endpoint->state != AVDTP_STREAM_ENDPOINT_OPENED){
-                        printf("    ACP: REJECT AVDTP_SI_OPEN, BAD_STATE\n");
+                        printf("    ACP: REJECT AVDTP_SI_START, BAD_STATE\n");
                         stream_endpoint->acceptor_config_state = AVDTP_ACCEPTOR_W2_REJECT_CATEGORY_WITH_ERROR_CODE;
                         connection->error_code = BAD_STATE;
                         connection->reject_signal_identifier = connection->signaling_packet.signal_identifier;
@@ -465,7 +466,6 @@ void avdtp_acceptor_stream_config_subsm_run(avdtp_connection_t * connection, avd
 
     switch (connection->acceptor_connection_state){
         case AVDTP_SIGNALING_CONNECTION_ACCEPTOR_W2_ANSWER_DISCOVER_SEPS:
-            printf(" -> AVDTP_SIGNALING_CONNECTION_OPENED\n");
             connection->state = AVDTP_SIGNALING_CONNECTION_OPENED;
             connection->acceptor_connection_state = AVDTP_SIGNALING_CONNECTION_ACCEPTOR_IDLE;
             avdtp_acceptor_send_seps_response(connection->l2cap_signaling_cid, connection->acceptor_transaction_label, (avdtp_stream_endpoint_t *) stream_endpoints);
@@ -485,7 +485,10 @@ void avdtp_acceptor_stream_config_subsm_run(avdtp_connection_t * connection, avd
             sent = 0;
             break;
     }
-    if (sent) return;
+    if (sent){
+        printf("    ACP: DONE\n");
+        return;      
+    } 
     
     avdtp_stream_endpoint_t * stream_endpoint = avdtp_stream_endpoint_for_seid(connection->query_seid, context);
     if (!stream_endpoint) return;
@@ -513,6 +516,8 @@ void avdtp_acceptor_stream_config_subsm_run(avdtp_connection_t * connection, avd
             if (connection->signaling_packet.packet_type != AVDTP_SINGLE_PACKET && connection->signaling_packet.packet_type != AVDTP_END_PACKET){
                 stream_endpoint->acceptor_config_state = acceptor_config_state;
                 printf("    ACP: fragmented\n");
+            } else {
+                printf("    ACP:DONE\n");
             }
             l2cap_send_prepared(cid, pos);
             break;
@@ -524,6 +529,8 @@ void avdtp_acceptor_stream_config_subsm_run(avdtp_connection_t * connection, avd
             if (connection->signaling_packet.packet_type != AVDTP_SINGLE_PACKET && connection->signaling_packet.packet_type != AVDTP_END_PACKET){
                 stream_endpoint->acceptor_config_state = acceptor_config_state;
                 printf("    ACP: fragmented\n");
+            } else {
+                printf("    ACP:DONE\n");
             }
             l2cap_send_prepared(cid, pos);
             break;
@@ -548,6 +555,8 @@ void avdtp_acceptor_stream_config_subsm_run(avdtp_connection_t * connection, avd
             if (connection->signaling_packet.packet_type != AVDTP_SINGLE_PACKET && connection->signaling_packet.packet_type != AVDTP_END_PACKET){
                 stream_endpoint->acceptor_config_state = acceptor_config_state;
                 printf("    ACP: fragmented\n");
+            } else {
+                printf("    ACP:DONE\n");
             }
             l2cap_send_prepared(cid, pos);
             break;

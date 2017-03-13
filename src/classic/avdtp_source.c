@@ -188,6 +188,7 @@ void avdtp_source_init(void){
     avdtp_source_context.stream_endpoints = NULL;
     avdtp_source_context.connections = NULL;
     avdtp_source_context.stream_endpoints_id_counter = 0;
+    avdtp_source_context.packet_handler = packet_handler;
     l2cap_register_service(&packet_handler, PSM_AVDTP, 0xffff, LEVEL_0);
 }
 

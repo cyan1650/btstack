@@ -409,9 +409,11 @@ void avdtp_prepare_capabilities(avdtp_signaling_packet_t * signaling_packet, uin
     if (signaling_packet->offset) return;
     uint8_t pack_all_capabilities = 1;
     signaling_packet->message_type = AVDTP_RESPONSE_ACCEPT_MSG;
-    signaling_packet->size = 0;
     int i;
-    signaling_packet->command[signaling_packet->size++] = signaling_packet->acp_seid << 2;
+    
+    signaling_packet->size = 0;
+    memset(signaling_packet->command, 0 , sizeof(signaling_packet->command));
+
     
     switch (identifier) {
         case AVDTP_SI_GET_CAPABILITIES:
@@ -421,10 +423,12 @@ void avdtp_prepare_capabilities(avdtp_signaling_packet_t * signaling_packet, uin
             pack_all_capabilities = 1;
             break;
         case AVDTP_SI_SET_CONFIGURATION:
+            signaling_packet->command[signaling_packet->size++] = signaling_packet->acp_seid << 2;
             signaling_packet->command[signaling_packet->size++] = signaling_packet->int_seid << 2;
             signaling_packet->message_type = AVDTP_CMD_MSG;
             break;
         case AVDTP_SI_RECONFIGURE:
+            signaling_packet->command[signaling_packet->size++] = signaling_packet->acp_seid << 2;
             signaling_packet->message_type = AVDTP_CMD_MSG;
             break;
         default: 
@@ -432,13 +436,18 @@ void avdtp_prepare_capabilities(avdtp_signaling_packet_t * signaling_packet, uin
             break;
     } 
     
+    // printf("command before packing:\n");
+    // printf_hexdump(signaling_packet->command, signaling_packet->size);
     for (i = 1; i < 9; i++){
         if (get_bit16(registered_service_categories, i)){
             // service category
+            // printf("pack service category: %d\n", i);
             signaling_packet->command[signaling_packet->size++] = i;
             signaling_packet->size += avdtp_pack_service_capabilities(signaling_packet->command+signaling_packet->size, sizeof(signaling_packet->command)-signaling_packet->size, capabilities, (avdtp_service_category_t)i, pack_all_capabilities);
         }
     }
+    // printf("command after packing:\n");
+    // printf_hexdump(signaling_packet->command, signaling_packet->size);
     // signaling_packet->command[signaling_packet->size++] = 0x04;
     // signaling_packet->command[signaling_packet->size++] = 0x02;
     // signaling_packet->command[signaling_packet->size++] = 0x02;
@@ -736,6 +745,7 @@ void avdtp_request_can_send_now_acceptor(avdtp_connection_t * connection, uint16
     l2cap_request_can_send_now_event(l2cap_cid);
 }
 void avdtp_request_can_send_now_initiator(avdtp_connection_t * connection, uint16_t l2cap_cid){
+    printf("avdtp_request_can_send_now_initiator %d\n", connection->wait_to_send_initiator = 1);
     connection->wait_to_send_initiator = 1;
     l2cap_request_can_send_now_event(l2cap_cid);
 }

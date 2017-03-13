@@ -284,7 +284,11 @@ typedef enum {
     AVDTP_STREAM_ENDPOINT_IDLE,
     AVDTP_STREAM_ENDPOINT_CONFIGURATION_SUBSTATEMACHINE,
     AVDTP_STREAM_ENDPOINT_CONFIGURED,
+
+    AVDTP_STREAM_ENDPOINT_W2_REQUEST_OPEN_STREAM,
+    AVDTP_STREAM_ENDPOINT_W2_L2CAP_FOR_MEDIA_CONNECT,
     AVDTP_STREAM_ENDPOINT_W4_L2CAP_FOR_MEDIA_CONNECTED,
+
     AVDTP_STREAM_ENDPOINT_OPENED, 
     AVDTP_STREAM_ENDPOINT_STREAMING, 
     AVDTP_STREAM_ENDPOINT_CLOSING,
@@ -297,7 +301,9 @@ typedef enum {
     AVDTP_INITIATOR_W2_SET_CONFIGURATION,
     AVDTP_INITIATOR_W2_SUSPEND_STREAM_WITH_SEID,
     AVDTP_INITIATOR_W2_RECONFIGURE_STREAM_WITH_SEID,
-    AVDTP_INITIATOR_W2_MEDIA_CONNECT,
+    
+    AVDTP_INITIATOR_W2_OPEN_STREAM,
+
     AVDTP_INITIATOR_W2_STREAMING_START,
     AVDTP_INITIATOR_W2_STREAMING_STOP,
     AVDTP_INITIATOR_W2_STREAMING_ABORT,
@@ -313,7 +319,7 @@ typedef enum {
     AVDTP_ACCEPTOR_W2_ANSWER_RECONFIGURE,
     AVDTP_ACCEPTOR_W2_ANSWER_GET_CONFIGURATION,
     AVDTP_ACCEPTOR_W2_ANSWER_OPEN_STREAM,
-    
+    // AVDTP_ACCEPTOR_W2_L2CAP_FOR_MEDIA_CONNECT,
     AVDTP_ACCEPTOR_W4_L2CAP_FOR_MEDIA_CONNECTED,
     
     AVDTP_ACCEPTOR_W2_ANSWER_START_STREAM,
@@ -395,6 +401,9 @@ typedef struct {
     avdtp_signaling_packet_t signaling_packet;
 
     uint8_t disconnect;
+    uint8_t media_connect;
+    uint8_t media_disconnect;
+    
     uint8_t initiator_transaction_label;
     uint8_t acceptor_transaction_label;
     uint8_t query_seid;
@@ -449,6 +458,7 @@ typedef struct {
     uint16_t stream_endpoints_id_counter;
     btstack_packet_handler_t avdtp_callback;
     void (*handle_media_data)(avdtp_stream_endpoint_t * stream_endpoint, uint8_t *packet, uint16_t size);
+    btstack_packet_handler_t packet_handler;
 } avdtp_context_t; 
 
 void avdtp_register_media_transport_category(avdtp_stream_endpoint_t * stream_endpoint);

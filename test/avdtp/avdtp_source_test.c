@@ -84,11 +84,12 @@ typedef struct {
 } avdtp_media_codec_configuration_sbc_t;
 
 // mac 2011: static bd_addr_t remote = {0x04, 0x0C, 0xCE, 0xE4, 0x85, 0xD3};
-// pts: 
-static bd_addr_t remote = {0x00, 0x1B, 0xDC, 0x08, 0x0A, 0xA5};
+// pts: static bd_addr_t remote = {0x00, 0x1B, 0xDC, 0x08, 0x0A, 0xA5};
 // mac 2013: static bd_addr_t remote = {0x84, 0x38, 0x35, 0x65, 0xd1, 0x15};
 // phone 2013: static bd_addr_t remote = {0xD8, 0xBB, 0x2C, 0xDF, 0xF0, 0xF2};
-// bt dongle: -u 02-04-01 static bd_addr_t remote = {0x00, 0x15, 0x83, 0x5F, 0x9D, 0x46};
+// bt dongle: -u 02-04-01 
+static bd_addr_t remote = {0x00, 0x15, 0x83, 0x5F, 0x9D, 0x46};
+
 static uint16_t con_handle = 0;
 static uint8_t sdp_avdtp_source_service_buffer[150];
 static avdtp_sep_t sep;
@@ -99,6 +100,23 @@ static avdtp_stream_endpoint_t * local_stream_endpoint;
 
 static uint16_t remote_configuration_bitmap;
 static avdtp_capabilities_t remote_configuration;
+
+static const char * avdtp_si_name[] = {
+    "ERROR",
+    "AVDTP_SI_DISCOVER",
+    "AVDTP_SI_GET_CAPABILITIES",
+    "AVDTP_SI_SET_CONFIGURATION",
+    "AVDTP_SI_GET_CONFIGURATION",
+    "AVDTP_SI_RECONFIGURE," 
+    "AVDTP_SI_OPEN", 
+    "AVDTP_SI_START", 
+    "AVDTP_SI_CLOSE",
+    "AVDTP_SI_SUSPEND",
+    "AVDTP_SI_ABORT", 
+    "AVDTP_SI_SECURITY_CONTROL",
+    "AVDTP_SI_GET_ALL_CAPABILITIES", 
+    "AVDTP_SI_DELAY_REPORT" 
+};
 
 typedef enum {
     AVDTP_APPLICATION_IDLE,
@@ -119,25 +137,32 @@ avdtp_application_state_t app_state = AVDTP_APPLICATION_IDLE;
 
 static btstack_packet_callback_registration_t hci_event_callback_registration;
 
+static const char * avdtp_si2str(uint16_t index){
+    if (index <= 0 || index > sizeof(avdtp_si_name)) return avdtp_si_name[0];
+    return avdtp_si_name[index];
+}
+
 static void dump_sbc_capability(adtvp_media_codec_information_sbc_t media_codec_sbc){
-    printf("Received media codec capability:\n");
-    printf("    - sampling_frequency: 0x%02x\n", media_codec_sbc.sampling_frequency_bitmap);
-    printf("    - channel_mode: 0x%02x\n", media_codec_sbc.channel_mode_bitmap);
-    printf("    - block_length: 0x%02x\n", media_codec_sbc.block_length_bitmap);
-    printf("    - subbands: 0x%02x\n", media_codec_sbc.subbands_bitmap);
-    printf("    - allocation_method: 0x%02x\n", media_codec_sbc.allocation_method_bitmap);
-    printf("    - bitpool_value [%d, %d] \n", media_codec_sbc.min_bitpool_value, media_codec_sbc.max_bitpool_value);
+    printf(" --- avdtp source --- Received media codec capability:\n");
+    printf("  - sampling_frequency: 0x%02x\n", media_codec_sbc.sampling_frequency_bitmap);
+    printf("  - channel_mode: 0x%02x\n", media_codec_sbc.channel_mode_bitmap);
+    printf("  - block_length: 0x%02x\n", media_codec_sbc.block_length_bitmap);
+    printf("  - subbands: 0x%02x\n", media_codec_sbc.subbands_bitmap);
+    printf("  - allocation_method: 0x%02x\n", media_codec_sbc.allocation_method_bitmap);
+    printf("  - bitpool_value [%d, %d] \n", media_codec_sbc.min_bitpool_value, media_codec_sbc.max_bitpool_value);
+    printf("\n");
 }
 
 static void dump_sbc_configuration(avdtp_media_codec_configuration_sbc_t configuration){
-    printf("Received media codec configuration:\n");
-    printf("    - num_channels: %d\n", configuration.num_channels);
-    printf("    - sampling_frequency: %d\n", configuration.sampling_frequency);
-    printf("    - channel_mode: %d\n", configuration.channel_mode);
-    printf("    - block_length: %d\n", configuration.block_length);
-    printf("    - subbands: %d\n", configuration.subbands);
-    printf("    - allocation_method: %d\n", configuration.allocation_method);
-    printf("    - bitpool_value [%d, %d] \n", configuration.min_bitpool_value, configuration.max_bitpool_value);
+    printf(" --- avdtp source --- Received media codec configuration:\n");
+    printf("  - num_channels: %d\n", configuration.num_channels);
+    printf("  - sampling_frequency: %d\n", configuration.sampling_frequency);
+    printf("  - channel_mode: %d\n", configuration.channel_mode);
+    printf("  - block_length: %d\n", configuration.block_length);
+    printf("  - subbands: %d\n", configuration.subbands);
+    printf("  - allocation_method: %d\n", configuration.allocation_method);
+    printf("  - bitpool_value [%d, %d] \n", configuration.min_bitpool_value, configuration.max_bitpool_value);
+    printf("\n");
 }
 
 
@@ -158,13 +183,13 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
                     break;
                 case HCI_EVENT_DISCONNECTION_COMPLETE:
                     // connection closed -> quit test app
-                    printf("\n --- avdtp_test: HCI_EVENT_DISCONNECTION_COMPLETE ---\n");
+                    printf("\n --- avdtp source --- HCI_EVENT_DISCONNECTION_COMPLETE ---\n");
                     break;
                 case HCI_EVENT_AVDTP_META:
                     switch (packet[2]){
                         case AVDTP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED:
                             con_handle = avdtp_subevent_signaling_connection_established_get_con_handle(packet);
-                            printf("\n --- avdtp_test: AVDTP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED, con handle 0x%02x ---\n", con_handle);
+                            printf(" --- avdtp source --- AVDTP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED, con handle 0x%02x ---\n", con_handle);
                             break;
                         case AVDTP_SUBEVENT_SIGNALING_SEP_FOUND:
                             if (app_state != AVDTP_APPLICATION_W2_DISCOVER_SEPS) return;
@@ -172,7 +197,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
                             sep.in_use = avdtp_subevent_signaling_sep_found_get_in_use(packet);
                             sep.media_type = avdtp_subevent_signaling_sep_found_get_media_type(packet);
                             sep.type = avdtp_subevent_signaling_sep_found_get_sep_type(packet);
-                            printf("Found sep: seid %u, in_use %d, media type %d, sep type %d (1-SNK)\n", sep.seid, sep.in_use, sep.media_type, sep.type);
+                            printf(" --- avdtp source --- Found sep: seid %u, in_use %d, media type %d, sep type %d (1-SNK)\n", sep.seid, sep.in_use, sep.media_type, sep.type);
                             break;
                         case AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_SBC_CAPABILITY:
                             app_state = AVDTP_APPLICATION_IDLE;
@@ -203,13 +228,19 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
                             break;
                         }  
                         case AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_OTHER_CAPABILITY:
-                            printf(" received non SBC codec. not implemented\n");
+                            printf(" --- avdtp source ---  received non SBC codec. not implemented\n");
                             break;
                         case AVDTP_SUBEVENT_SIGNALING_ACCEPT:
                             app_state = AVDTP_APPLICATION_IDLE;
                             break;
+                        case AVDTP_SUBEVENT_SIGNALING_REJECT:
+                            printf(" --- avdtp source ---  Rejected %s\n", avdtp_si2str(avdtp_subevent_signaling_reject_get_signal_identifier(packet)));
+                            break;
+                        case AVDTP_SUBEVENT_SIGNALING_GENERAL_REJECT:
+                            printf(" --- avdtp source ---  Rejected %s\n", avdtp_si2str(avdtp_subevent_signaling_general_reject_get_signal_identifier(packet)));
+                            break;
                         default:
-                            printf(" not implemented\n");
+                            printf(" --- avdtp source ---  not implemented\n");
                             break; 
                     }
                     break;   
@@ -361,7 +392,7 @@ int btstack_main(int argc, const char * argv[]){
 
 //#ifndef SMG_BI
     local_stream_endpoint = avdtp_source_create_stream_endpoint(AVDTP_SOURCE, AVDTP_AUDIO);
-    local_stream_endpoint->sep.seid = 1;
+    local_stream_endpoint->sep.seid = 2;
     avdtp_source_register_media_transport_category(local_stream_endpoint->sep.seid);
     avdtp_source_register_media_codec_category(local_stream_endpoint->sep.seid, AVDTP_AUDIO, AVDTP_CODEC_SBC, media_sbc_codec_capabilities, sizeof(media_sbc_codec_capabilities));
 //#endif
