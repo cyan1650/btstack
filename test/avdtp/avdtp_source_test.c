@@ -171,6 +171,9 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
     UNUSED(size);
 
     bd_addr_t event_addr;
+    uint8_t signal_identifier;
+    uint8_t status;
+
     switch (packet_type) {
  
         case HCI_EVENT_PACKET:
@@ -189,6 +192,11 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
                     switch (packet[2]){
                         case AVDTP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED:
                             con_handle = avdtp_subevent_signaling_connection_established_get_con_handle(packet);
+                            status = avdtp_subevent_signaling_connection_established_get_status(packet);
+                            if (status != 0){
+                                printf(" --- avdtp source --- AVDTP_SUBEVENT_SIGNALING_CONNECTION cpould not be established, status %d ---\n", status);
+                                break;
+                            }
                             printf(" --- avdtp source --- AVDTP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED, con handle 0x%02x ---\n", con_handle);
                             break;
                         case AVDTP_SUBEVENT_SIGNALING_SEP_FOUND:
@@ -230,14 +238,43 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
                         case AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_OTHER_CAPABILITY:
                             printf(" --- avdtp source ---  received non SBC codec. not implemented\n");
                             break;
+                        
+                        case AVDTP_SUBEVENT_STREAMING_CONNECTION_ESTABLISHED:
+                            con_handle = avdtp_subevent_streaming_connection_established_get_con_handle(packet);
+                            status = avdtp_subevent_streaming_connection_established_get_status(packet);
+                            if (status != 0){
+                                printf(" --- avdtp source --- AVDTP_SUBEVENT_STREAMING_CONNECTION cpould not be established, status %d ---\n", status);
+                                break;
+                            }
+                            printf(" --- avdtp source --- AVDTP_SUBEVENT_STREAMING_CONNECTION_ESTABLISHED, con handle 0x%02x ---\n", con_handle);
+                            break;
+
                         case AVDTP_SUBEVENT_SIGNALING_ACCEPT:
                             app_state = AVDTP_APPLICATION_IDLE;
+                            signal_identifier = avdtp_subevent_signaling_accept_get_signal_identifier(packet);
+                            status = avdtp_subevent_signaling_accept_get_status(packet);
+                            printf(" --- avdtp source ---  Accepted %s, status %d\n", avdtp_si2str(signal_identifier), status);
+                            
+                            switch (signal_identifier){
+                                case AVDTP_SI_START:
+                                    break;
+                                case AVDTP_SI_CLOSE:
+                                    break;
+                                case AVDTP_SI_SUSPEND:
+                                    break;
+                                case AVDTP_SI_ABORT:
+                                    break;
+                                default:
+                                    break;
+                            }
                             break;
                         case AVDTP_SUBEVENT_SIGNALING_REJECT:
-                            printf(" --- avdtp source ---  Rejected %s\n", avdtp_si2str(avdtp_subevent_signaling_reject_get_signal_identifier(packet)));
+                            signal_identifier = avdtp_subevent_signaling_reject_get_signal_identifier(packet);
+                            printf(" --- avdtp source ---  Rejected %s\n", avdtp_si2str(signal_identifier));
                             break;
                         case AVDTP_SUBEVENT_SIGNALING_GENERAL_REJECT:
-                            printf(" --- avdtp source ---  Rejected %s\n", avdtp_si2str(avdtp_subevent_signaling_general_reject_get_signal_identifier(packet)));
+                            signal_identifier = avdtp_subevent_signaling_general_reject_get_signal_identifier(packet);
+                            printf(" --- avdtp source ---  Rejected %s\n", avdtp_si2str(signal_identifier));
                             break;
                         default:
                             printf(" --- avdtp source ---  not implemented\n");

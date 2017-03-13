@@ -561,9 +561,6 @@ void avdtp_acceptor_stream_config_subsm_run(avdtp_connection_t * connection, avd
             l2cap_send_prepared(cid, pos);
             break;
         }
-        case AVDTP_ACCEPTOR_W4_L2CAP_FOR_MEDIA_CONNECTED:
-            stream_endpoint->acceptor_config_state = AVDTP_ACCEPTOR_W4_L2CAP_FOR_MEDIA_CONNECTED;
-            break;
         case AVDTP_ACCEPTOR_W2_ANSWER_OPEN_STREAM:
             printf("    ACP: DONE\n");
             avdtp_acceptor_send_accept_response(cid, trid, AVDTP_SI_OPEN);
