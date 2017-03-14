@@ -179,8 +179,7 @@ static void local_version_information_handler(uint8_t * packet){
         case COMPANY_ID_BROADCOM_CORPORATION:   
             printf("Broadcom - using BCM driver.\n");
             hci_set_chipset(btstack_chipset_bcm_instance());
-
-            use_fast_uart();
+            //use_fast_uart();
             is_bcm = 1;
             break;
         case COMPANY_ID_ST_MICROELECTRONICS:   
@@ -201,7 +200,17 @@ static void local_version_information_handler(uint8_t * packet){
     }
 }
 
+char dev_str[64];
 int main(int argc, const char * argv[]){
+
+    int i;
+    for(i=0;i<argc;i++)
+    {
+      printf("% %s \r\n",i,argv[i]);
+     }
+
+    snprintf(dev_str,sizeof(dev_str),"%s%s","/dev/",argv[1]);
+    printf("%s\r\n",dev_str);
 
 	/// GET STARTED with BTstack ///
 	btstack_memory_init();
@@ -211,7 +220,8 @@ int main(int argc, const char * argv[]){
     hci_dump_open("/tmp/hci_dump.pklg", HCI_DUMP_PACKETLOGGER);
 
     // pick serial port
-    config.device_name = "/dev/tty.usbserial-A900K2WS"; // DFROBOT
+    //config.device_name = "/dev/tty.usbserial-A900K2WS"; // DFROBOT
+      config.device_name = dev_str;
     // config.device_name = "/dev/tty.usbserial-A50285BI"; // BOOST-CC2564MODA New
 
     // init HCI
@@ -224,6 +234,7 @@ int main(int argc, const char * argv[]){
     // inform about BTstack state
     hci_event_callback_registration.callback = &packet_handler;
     hci_add_event_handler(&hci_event_callback_registration);
+    (void) hci_event_callback_registration;
 
     // handle CTRL-c
     signal(SIGINT, sigint_handler);

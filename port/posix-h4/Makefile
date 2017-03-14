@@ -29,7 +29,7 @@ include ${BTSTACK_ROOT}/chipset/cc256x/Makefile.inc
 # fetch Broadcom init scripts
 include ${BTSTACK_ROOT}/chipset/bcm/Makefile.inc
 
-CFLAGS  += -g -Wall -Werror \
+CFLAGS  += -g -Wall  \
 	-I$(BTSTACK_ROOT)/platform/embedded \
 	-I$(BTSTACK_ROOT)/platform/posix \
 	-I$(BTSTACK_ROOT)/chipset/bcm \
